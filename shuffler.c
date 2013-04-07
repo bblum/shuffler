@@ -36,8 +36,8 @@ int print_usage(int __attribute__((unused)) line)
 #define CARD_WIDTH 10
 #define CARD_HEIGHT 40
 
-inline void *XMALLOC(size_t size) {
-	char *p = malloc(size); assert(p != NULL); return p;
+inline void *XCALLOC(size_t size) {
+	char *p = calloc(size, 1); assert(p != NULL); return p;
 }
 
 enum mode { PILE, RIFFLE, RANDOM };
@@ -69,7 +69,7 @@ pixel colorize(int hue) {
 pixel *flatten(int *deck) {
 	int rows = ROWS();
 	int cols = COLS();
-	pixel *flat = XMALLOC(rows * cols * sizeof(pixel));
+	pixel *flat = XCALLOC(rows * cols * sizeof(pixel));
 	int i, j;
 	for (i = 0; i < rows; i++) {
 		for (j = 0; j < cols; j++) {
@@ -84,11 +84,40 @@ pixel *flatten(int *deck) {
 }
 
 void shuffle_pile(int *deck) {
-	assert(0 && "Unimplemented shuffle mode");
+	int i, j, card;
+
+	int **ps  = XCALLOC(piles * sizeof(int *));
+	int *lens = XCALLOC(piles * sizeof(int));
+	for (i = 0; i < piles; i++) {
+		ps[i] = XCALLOC(cards * sizeof(int));
+	}
+
+	// pile
+	for (i = 0; i < cards; i++) {
+		int num = i % piles;
+		ps[num][lens[num]] = deck[i];
+		lens[num]++;
+	}
+	// collate
+	card = 0;
+	for (i = piles - 1; i >= 0; i--) { // stack piles backwards
+		for (j = 0; j < lens[i]; j++) {
+			deck[card] = ps[i][j];
+			card++;
+		}
+	}
+	assert(card == cards);
+
+	// cleanup
+	for (i = 0; i < piles; i++) {
+		free(ps[i]);
+	}
+	free(ps);
+	free(lens);
 }
 
 void shuffle_riffle(int *deck) {
-	int *newdeck = XMALLOC(cards * sizeof(int));
+	int *newdeck = XCALLOC(cards * sizeof(int));
 	int i;
 	int midpoint = cards / 2;// (cards % 2 == 0) ? (cards / 2) : (cards / 2) + 1;
 	for (i = 0; i < midpoint; i++) {
@@ -113,7 +142,7 @@ void shuffle_random(int *deck) {
 
 int go() {
 	int i;
-	int *deck = XMALLOC(cards * sizeof(int));
+	int *deck = XCALLOC(cards * sizeof(int));
 	int ret;
 	pixel *image;
 	/* init deck */
@@ -138,7 +167,7 @@ int go() {
 
 /******************************************************************************/
 
-#define GET_NUM(varp) do { char *endptr; *varp = strtol(optarg, &endptr, 0); if (endptr == optarg) { printf("argument not a number: %s\n", optarg); exit(usage()); } } while (0)
+#define GET_NUM(varp) do { char *endptr; *varp = strtol(optarg, &endptr, 10); if (endptr == optarg) { printf("argument not a number: %s\n", optarg); exit(usage()); } } while (0)
 
 #define MATCH_STR(s) (strncmp(optarg, s, strlen(s)) == 0)
 
