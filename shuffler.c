@@ -119,14 +119,18 @@ void shuffle_pile(int *deck) {
 void shuffle_riffle(int *deck) {
 	int *newdeck = XCALLOC(cards * sizeof(int));
 	int i;
-	int midpoint = cards / 2;// (cards % 2 == 0) ? (cards / 2) : (cards / 2) + 1;
+	// riffle backwards to make sure the top and bottom cards migrate
+	int midpoint = cards / 2;
+	// int midpoint = (cards % 2 == 0) ? (cards / 2) : (cards / 2) + 1;
 	for (i = 0; i < midpoint; i++) {
 		int index = 1+(i*2);
+		// int index = (i*2);
 		assert(index < cards);
 		newdeck[index] = deck[i];
 	}
 	for (i = midpoint; i < cards; i++) {
 		int index = (i-midpoint)*2;
+		// int index = 1+((i-midpoint)*2);
 		assert(index < cards);
 		newdeck[index] = deck[i];
 	}
@@ -195,7 +199,6 @@ int main(int argc, char * const argv[])
 		printf("No output file specified.\n");
 		exit(usage());
 	}
-	printf("piles: %ld, reps: %ld, cards: %ld, mode: %d, file: %s\n",
-	       piles, reps, cards, mode, argv[optind]);
+	// printf("piles: %ld, reps: %ld, cards: %ld, mode: %d, file: %s\n", piles, reps, cards, mode, argv[optind]);
 	return go();
 }
