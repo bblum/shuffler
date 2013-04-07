@@ -8,20 +8,9 @@
 #include "bmplib.h"
 
 extern char *optarg;
-extern int optind, opterr, optopt;
+extern int optind;
 
-int usage();
-
-#if 0
-static pixel *image;
-static pixel *new;
-static int rows;
-static int cols;
-#endif
-
-#define usage() print_usage(__LINE__)
-
-int print_usage(int __attribute__((unused)) line)
+int usage()
 {
 	printf("Usage: bmptool -m <method> -p <piles> -r <reps> "
 	                      "-n <cards> <outputfile>\n"
