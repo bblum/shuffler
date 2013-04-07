@@ -100,7 +100,11 @@ void shuffle_pile(int *deck) {
 	}
 	// collate
 	card = 0;
+#ifdef PILE_FORWARDS
+	for (i = 0; i < piles; i++) {
+#else
 	for (i = piles - 1; i >= 0; i--) { // stack piles backwards
+#endif
 		for (j = 0; j < lens[i]; j++) {
 			deck[card] = ps[i][j];
 			card++;
@@ -120,17 +124,26 @@ void shuffle_riffle(int *deck) {
 	int *newdeck = XCALLOC(cards * sizeof(int));
 	int i;
 	// riffle backwards to make sure the top and bottom cards migrate
+#ifdef RIFFLE_FORWARDS
+	int midpoint = (cards % 2 == 0) ? (cards / 2) : (cards / 2) + 1;
+#else
 	int midpoint = cards / 2;
-	// int midpoint = (cards % 2 == 0) ? (cards / 2) : (cards / 2) + 1;
+#endif
 	for (i = 0; i < midpoint; i++) {
+#ifdef RIFFLE_FORWARDS
+		int index = (i*2);
+#else
 		int index = 1+(i*2);
-		// int index = (i*2);
+#endif
 		assert(index < cards);
 		newdeck[index] = deck[i];
 	}
 	for (i = midpoint; i < cards; i++) {
+#ifdef RIFFLE_FORWARDS
+		int index = 1+((i-midpoint)*2);
+#else
 		int index = (i-midpoint)*2;
-		// int index = 1+((i-midpoint)*2);
+#endif
 		assert(index < cards);
 		newdeck[index] = deck[i];
 	}
