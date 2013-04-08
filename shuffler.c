@@ -131,7 +131,7 @@ void shuffle_riffle(int *deck) {
 		if ((genrand() % 100) >= error) {
 			swap = (swap + 1) % 2;
 		} else {
-			printf("shuffle error at index %d\n", index[swap]);
+			// printf("shuffle error at index %d\n", index[swap]);
 		}
 	}
 
