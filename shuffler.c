@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 #include "bmplib.h"
+#include "mt19937int.h"
 
 extern char *optarg;
 extern int optind;
@@ -13,10 +15,11 @@ extern int optind;
 int usage()
 {
 	printf("Usage: bmptool -m <method> -p <piles> -r <reps> "
-	                      "-n <cards> <outputfile>\n"
+	                      "-e <error> -n <cards> <outputfile>\n"
 	       "\t<method> = 'pile' or 'riffle' or 'random'\n"
 	       "\t <piles> = how many piles? default 5 (ignored w/o pile)\n"
 	       "\t  <reps> = how many repeats? default 1\n"
+	       "\t <error> = error probability (in %%) default 0 (ignored w/o riffle)\n"
 	       "\t <cards> = how big is the deck? default 45\n");
 	// printf("err at %d\n", line);
 	return -1;
@@ -33,6 +36,7 @@ enum mode { PILE, RIFFLE, RANDOM };
 long piles = 5;
 long reps = 1;
 long cards = 45;
+long error = 0;
 enum mode mode = RIFFLE;
 char *file;
 
@@ -110,32 +114,27 @@ void shuffle_pile(int *deck) {
 }
 
 void shuffle_riffle(int *deck) {
-	int *newdeck = XCALLOC(cards * sizeof(int));
-	int i;
-	// riffle backwards to make sure the top and bottom cards migrate
-#ifdef RIFFLE_FORWARDS
-	int midpoint = (cards % 2 == 0) ? (cards / 2) : (cards / 2) + 1;
-#else
 	int midpoint = cards / 2;
-#endif
-	for (i = 0; i < midpoint; i++) {
-#ifdef RIFFLE_FORWARDS
-		int index = (i*2);
-#else
-		int index = 1+(i*2);
-#endif
-		assert(index < cards);
-		newdeck[index] = deck[i];
+	int index[2]    = { 0,        midpoint };
+	int maxindex[2] = { midpoint, cards    };
+	int swap = 1; // second pile first
+	int i;
+	int *newdeck = XCALLOC(cards * sizeof(int));
+
+	for (i = 0; i < cards; i++) {
+		if (index[swap] == maxindex[swap]) {
+			swap = (swap + 1) % 2;
+			assert(index[swap] < maxindex[swap]);
+		}
+		newdeck[i] = deck[index[swap]];
+		index[swap]++;
+		if ((genrand() % 100) >= error) {
+			swap = (swap + 1) % 2;
+		} else {
+			printf("shuffle error at index %d\n", index[swap]);
+		}
 	}
-	for (i = midpoint; i < cards; i++) {
-#ifdef RIFFLE_FORWARDS
-		int index = 1+((i-midpoint)*2);
-#else
-		int index = (i-midpoint)*2;
-#endif
-		assert(index < cards);
-		newdeck[index] = deck[i];
-	}
+
 	for (i = 0; i < cards; i++) {
 		deck[i] = newdeck[i];
 	}
@@ -181,7 +180,7 @@ int main(int argc, char * const argv[])
 {
 	int c;
 
-	while ((c = getopt(argc, argv, "m:p:r:n:")) != -1) {
+	while ((c = getopt(argc, argv, "m:p:r:n:e:")) != -1) {
 		switch (c) {
 			case 'm':
 				if      (MATCH_STR("riffle")) mode = RIFFLE;
@@ -192,6 +191,7 @@ int main(int argc, char * const argv[])
 			case 'p': GET_NUM(&piles); break;
 			case 'r': GET_NUM(&reps);  break;
 			case 'n': GET_NUM(&cards); break;
+			case 'e': GET_NUM(&error); break;
 			case '?':
 			default:
 				exit(usage());
@@ -201,6 +201,14 @@ int main(int argc, char * const argv[])
 		printf("No output file specified.\n");
 		exit(usage());
 	}
+	if (error < 0 || error > 100) {
+		printf("Error must be between 0 and 100 (percent)\n");
+		exit(usage());
+	} else if (cards > 65536) {
+		printf("Too many cards (%ld)\n", cards);
+		exit(usage());
+	}
+	sgenrand(time(NULL));
 	// printf("piles: %ld, reps: %ld, cards: %ld, mode: %d, file: %s\n", piles, reps, cards, mode, argv[optind]);
 	return go();
 }
