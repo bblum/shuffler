@@ -1,2 +1,5 @@
 Visualisations for "pile" and "riffle" deck shuffling methods. Example run in
 wrapper.sh. Example output at http://bblum.net/images/shuffle .
+
+Apart from the mersenne twister (Library GPL), this code is provided with no
+license. You may do with it as you please.
